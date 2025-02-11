@@ -96,6 +96,11 @@ def convert_time(date_str):
 
 
 def scrape_google_news(query, start_page, end_page):
+    start_index = (start_page - 1) * 10
+    search_url = (
+        f"https://www.google.com/search?q={query}&tbm=nws&tbs=qdr:d&start={start_index}"
+    )
+
     logger.info(
         f"Mencari berita untuk: {query}, dari halaman {start_page} sampai {end_page}"
     )
@@ -108,16 +113,11 @@ def scrape_google_news(query, start_page, end_page):
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.get(search_url)
 
     collected_news = {}
 
     for page in range(start_page, end_page + 1):
-        start_index = (page - 1) * 10
-        search_url = f"https://www.google.com/search?q={query}&tbm=nws&tbs=qdr:d&start={start_index}"
-        driver.get(search_url)
-
-        logger.info(f"Mencari berita untuk: {query}, dari halaman {page}")
-
         try:
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".SoaBEf"))
@@ -147,13 +147,23 @@ def scrape_google_news(query, start_page, end_page):
                     logger.warning(f"Gagal mengambil berita: {e}")
 
             save_news_data()
+
+            next_button = driver.find_elements(
+                By.CSS_SELECTOR, ".d6cvqb a[id='pnnext']"
+            )
+            if not next_button:
+                break
+
+            next_button[0].click()
+            time.sleep(random.uniform(2, 5))
+
         except Exception as e:
             error_message = (
-                f"⚠️ *Scraping Error!* ⚠️\n\nError fetching news: page {start_index}"
+                f"⚠️ *Scraping Error!* ⚠️\n\nError fetching news: Halaman {start_index}"
             )
             send_telegram_message(error_message)
-            logger.error(f"Error fetching news: page {start_index}")
-            time.sleep(random.uniform(120, 900))
+            time.sleep(random.uniform(2, 5))
+            break
     driver.quit()
     save_news_data()
 
@@ -246,15 +256,36 @@ if __name__ == "__main__":
         get_saham_data()
         collected_news = {news["url"]: news for news in load_existing_news()}
         matched_news = load_existing_matched_news()
+        maxPage = 10
+        maxTotalPage = 30
+        for start in range(1, maxTotalPage + 1, maxPage):
+            try:
+                end = min(start + (maxPage - 1), maxTotalPage)
+                send_telegram_message(
+                    f"*Scraping Dimulai dari Halaman {start} - {end}!*"
+                )
+                keywords = [
+                    "Saham terbaru",
+                    "Saham hari ini",
+                    "Pasar saham",
+                    "Indeks saham",
+                    "Berita saham terkini",
+                    "Bursa saham hari ini",
+                    "Pergerakan saham terbaru",
+                    "Saham yang naik hari ini",
+                    "Saham yang turun hari ini",
+                ]
 
-        for start in range(1, 2001, 200):
-            end = min(start + 199, 2000)
-            send_telegram_message(f"*Scraping Dimulai dari Halaman {start} - {end}!*")
-            scrape_google_news("saham", start, end)
-            send_telegram_message(
-                f"✅ *Scraping Selesai! 🎉*\nTelah fetch {start} - {end} halaman berita saham terbaru!"
-            )
-            time.sleep(random.uniform(60, 180))
+                for keyword in keywords:
+                    scrape_google_news(keyword, start, end)
+                    time.sleep(random.uniform(3, 10))
+                send_telegram_message(
+                    f"✅ *Scraping Selesai! 🎉*\nTelah fetch {start} - {end} halaman berita saham terbaru!"
+                )
+                time.sleep(random.uniform(5, 10))
+            except Exception as e:
+                logger.error(f"Scraping gagal: {e}")
+                break
 
         send_telegram_message(
             f"Menunggu 5 - 10 menit sebelum scraping ulang dari halaman 1..."

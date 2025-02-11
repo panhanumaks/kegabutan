@@ -62,10 +62,10 @@ def send_telegram_message(message):
     requests.post(url, json=payload)
 
 
-# Setup scheduler untuk kirim pesan setiap 30 menit
+# Setup scheduler untuk kirim pesan setiap 60 menit
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
-    scheduler.add_job(send_trending_saham, "interval", minutes=30)
+    scheduler.add_job(send_trending_saham, "interval", minutes=60)
 scheduler.start()
 
 

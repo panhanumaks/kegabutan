@@ -95,8 +95,10 @@ def convert_time(date_str):
     return None
 
 
-def scrape_google_news(query):
-    logger.info(f"Mencari berita untuk: {query}")
+def scrape_google_news(query, start_page, end_page):
+    logger.info(
+        f"Mencari berita untuk: {query}, dari halaman {start_page} sampai {end_page}"
+    )
     search_url = f"https://www.google.com/search?q={query}&tbm=nws&tbs=qdr:d"
 
     chrome_options = Options()
@@ -109,7 +111,7 @@ def scrape_google_news(query):
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(search_url)
 
-    for page in range(1, 501):
+    for page in range(start_page, end_page + 1):
         try:
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".SoaBEf"))
@@ -248,9 +250,17 @@ if __name__ == "__main__":
         get_saham_data()
         collected_news = {news["url"]: news for news in load_existing_news()}
         matched_news = load_existing_matched_news()
-        scrape_google_news("saham")
+
+        for start in range(1, 2001, 200):
+            end = min(start + 199, 2000)
+            send_telegram_message(f"*Scraping Dimulai dari Halaman {start} - {end}!*")
+            scrape_google_news("saham", start, end)
+            send_telegram_message(
+                f"✅ *Scraping Selesai! 🎉*\nTelah fetch {start} - {end} halaman berita saham terbaru!"
+            )
+            time.sleep(random.uniform(60, 180))
+
         send_telegram_message(
-            "✅ *Scraping Selesai!* 🎉\nTelah fetch 500 halaman berita saham terbaru!"
+            f"Menunggu 5 - 10 menit sebelum scraping ulang dari halaman 1..."
         )
-        logger.info("Menunggu 5 - 10 menit sebelum scraping ulang...")
         time.sleep(random.uniform(300, 600))

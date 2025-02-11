@@ -152,9 +152,8 @@ def scrape_google_news(query, start_page, end_page):
                 f"⚠️ *Scraping Error!* ⚠️\n\nError fetching news: page {start_index}"
             )
             send_telegram_message(error_message)
-
             logger.error(f"Error fetching news: page {start_index}")
-
+            time.sleep(random.uniform(120, 900))
     driver.quit()
     save_news_data()
 

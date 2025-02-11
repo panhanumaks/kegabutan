@@ -35,11 +35,22 @@ def filter_trending_saham(days, max_saham=50):
     return trending_saham
 
 
-def send_trending_saham():
-    trending_1_day = filter_trending_saham(1)
+with open("kode_saham.json", "r", encoding="utf-8") as f:
+    saham_data = json.load(f)
 
-    message = "📈 *50 Saham Trending*\n" "1️⃣ *24 Jam Terakhir:*\n" + "\n".join(
-        trending_1_day
+# Create a dictionary for quick lookup
+saham_dict = {saham["code"]: saham["label"] for saham in saham_data}
+
+
+def send_trending_saham():
+    trending_1_day = filter_trending_saham(1)  # List of stock codes
+
+    message = "📈 *50 Saham Trending*\n" "1️⃣ *24 Jam Terakhir:*\n"
+    message += "\n".join(
+        [
+            f"{i+1}. {code} - {saham_dict.get(code, 'Unknown')}"
+            for i, code in enumerate(trending_1_day)
+        ]
     )
 
     send_telegram_message(message)

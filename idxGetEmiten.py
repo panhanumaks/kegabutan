@@ -147,7 +147,7 @@ def scrape_google_news(query):
                 break
 
             next_button[0].click()
-            time.sleep(random.uniform(5, 25))
+            time.sleep(random.uniform(10, 30))
 
         except Exception as e:
             error_message = f"⚠️ *Scraping Error!* ⚠️\n\nTerjadi kesalahan saat scraping berita:\n`{str(e)}`"

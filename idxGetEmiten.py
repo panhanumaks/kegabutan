@@ -99,7 +99,6 @@ def scrape_google_news(query, start_page, end_page):
     logger.info(
         f"Mencari berita untuk: {query}, dari halaman {start_page} sampai {end_page}"
     )
-    search_url = f"https://www.google.com/search?q={query}&tbm=nws&tbs=qdr:d"
 
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")
@@ -109,9 +108,16 @@ def scrape_google_news(query, start_page, end_page):
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.get(search_url)
+
+    collected_news = {}
 
     for page in range(start_page, end_page + 1):
+        start_index = (page - 1) * 10
+        search_url = f"https://www.google.com/search?q={query}&tbm=nws&tbs=qdr:d&start={start_index}"
+        driver.get(search_url)
+
+        logger.info(f"Mencari berita untuk: {query}, dari halaman {page}")
+
         try:
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".SoaBEf"))
@@ -141,22 +147,13 @@ def scrape_google_news(query, start_page, end_page):
                     logger.warning(f"Gagal mengambil berita: {e}")
 
             save_news_data()
-
-            next_button = driver.find_elements(
-                By.CSS_SELECTOR, ".d6cvqb a[id='pnnext']"
-            )
-            if not next_button:
-                break
-
-            next_button[0].click()
-            time.sleep(random.uniform(10, 30))
-
         except Exception as e:
-            error_message = f"⚠️ *Scraping Error!* ⚠️\n\nTerjadi kesalahan saat scraping berita:\n`{str(e)}`"
+            error_message = (
+                f"⚠️ *Scraping Error!* ⚠️\n\nError fetching news: page {start_index}"
+            )
             send_telegram_message(error_message)
 
-            logger.error(f"Error fetching news: {e}")
-            break
+            logger.error(f"Error fetching news: page {start_index}")
 
     driver.quit()
     save_news_data()

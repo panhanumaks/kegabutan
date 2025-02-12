@@ -119,14 +119,11 @@ def scrape_google_news(query, start_page, end_page):
 
     for page in range(start_page, end_page + 1):
         try:
-            WebDriverWait(driver, 10).until(
+            WebDriverWait(driver, 5).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".SoaBEf"))
             )
 
             news_cards = driver.find_elements(By.CSS_SELECTOR, ".SoaBEf")
-            if not news_cards:
-                f"*Data Tidak Ditemukan!*\n\nHalaman {page}\n{search_url}"
-                break
 
             for card in news_cards:
                 try:
@@ -162,8 +159,9 @@ def scrape_google_news(query, start_page, end_page):
             time.sleep(random.uniform(2, 5))
 
         except Exception as e:
-            error_message = f"⚠️ *Scraping Error!* ⚠️\n\nError fetching news: Halaman {page}\n{search_url}"
-            send_telegram_message(error_message)
+            send_telegram_message(
+                f"Pencarian '{query}' sudah melewati batas halaman {page}."
+            )
             time.sleep(random.uniform(2, 5))
             break
     driver.quit()
@@ -276,6 +274,48 @@ if __name__ == "__main__":
                     "Pergerakan saham terbaru",
                     "Saham yang naik hari ini",
                     "Saham yang turun hari ini",
+                    "Saham blue chip",
+                    "Saham gorengan",
+                    "Saham IPO terbaru",
+                    "Analisis saham",
+                    "Rekomendasi saham",
+                    "Saham yang trending",
+                    "Saham yang paling banyak diperdagangkan",
+                    "Volume perdagangan saham",
+                    "Sentimen pasar saham",
+                    "Kinerja emiten",
+                    "Prediksi pasar saham",
+                    "Pergerakan IHSG",
+                    "Bursa Efek Indonesia",
+                    "Saham teknologi",
+                    "Saham perbankan",
+                    "Saham energi",
+                    "Saham properti",
+                    "Saham consumer goods",
+                    "Investor institusi",
+                    "Investor ritel",
+                    "Asing masuk pasar saham",
+                    "Asing keluar dari saham",
+                    "Fundamental saham",
+                    "Saham undervalued",
+                    "Saham overvalued",
+                    "Saham yang layak investasi",
+                    "Emiten dengan laba tertinggi",
+                    "Emiten dengan kerugian terbesar",
+                    "Right issue saham",
+                    "Stock split",
+                    "Dividen saham",
+                    "Buyback saham",
+                    "Berita emiten",
+                    "Aksi korporasi saham",
+                    "RUPS saham",
+                    "Perusahaan IPO tahun ini",
+                    "Krisis pasar saham",
+                    "Hedge fund dan saham",
+                    "Saham yang paling volatil",
+                    "Saham dengan kenaikan tertinggi",
+                    "Saham dengan penurunan terdalam",
+                    "Tren investasi saham",
                 ]
 
                 for keyword in keywords:

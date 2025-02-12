@@ -122,7 +122,11 @@ def scrape_google_news(query, start_page, end_page):
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".SoaBEf"))
             )
+
             news_cards = driver.find_elements(By.CSS_SELECTOR, ".SoaBEf")
+            if not news_cards:
+                f"*Data Tidak Ditemukan!*\n\nHalaman {page}\n{search_url}"
+                break
 
             for card in news_cards:
                 try:
@@ -158,9 +162,7 @@ def scrape_google_news(query, start_page, end_page):
             time.sleep(random.uniform(2, 5))
 
         except Exception as e:
-            error_message = (
-                f"⚠️ *Scraping Error!* ⚠️\n\nError fetching news: Halaman {start_index}"
-            )
+            error_message = f"⚠️ *Scraping Error!* ⚠️\n\nError fetching news: Halaman {page}\n{search_url}"
             send_telegram_message(error_message)
             time.sleep(random.uniform(2, 5))
             break

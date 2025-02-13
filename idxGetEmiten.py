@@ -162,6 +162,7 @@ def scrape_google_news(query, start_page, end_page):
             time.sleep(random.uniform(2, 5))
 
         except Exception as e:
+            logger.warning(f"Gagal mengambil berita: {e}")
             time.sleep(random.uniform(2, 5))
             break
     driver.quit()

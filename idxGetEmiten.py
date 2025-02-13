@@ -149,19 +149,19 @@ def scrape_google_news(query, start_page, end_page):
 
             save_news_data()
 
+            send_telegram_message(
+                    f"✅ *Scraping Selesai! 🎉*\nTelah fetch page berita {query} ke {page}!"
+            )
             next_button = driver.find_elements(
                 By.CSS_SELECTOR, ".d6cvqb a[id='pnnext']"
             )
             if not next_button:
                 break
-
+            
             next_button[0].click()
             time.sleep(random.uniform(2, 5))
 
         except Exception as e:
-            send_telegram_message(
-                f"Pencarian '{query}' sudah melewati batas halaman {page}."
-            )
             time.sleep(random.uniform(2, 5))
             break
     driver.quit()

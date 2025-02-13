@@ -150,14 +150,14 @@ def scrape_google_news(query, start_page, end_page):
             save_news_data()
 
             send_telegram_message(
-                    f"✅ *Scraping Selesai! 🎉*\nTelah fetch page berita {query} ke {page}!"
+                f"✅ *Scraping Selesai! 🎉*\nTelah fetch page berita {query} ke {page}!"
             )
             next_button = driver.find_elements(
                 By.CSS_SELECTOR, ".d6cvqb a[id='pnnext']"
             )
             if not next_button:
                 break
-            
+
             next_button[0].click()
             time.sleep(random.uniform(2, 5))
 
@@ -253,84 +253,89 @@ def load_existing_matched_news():
 
 if __name__ == "__main__":
     while True:
-        send_telegram_message("*Scraping Dimulai!*")
-        get_saham_data()
-        collected_news = {news["url"]: news for news in load_existing_news()}
-        matched_news = load_existing_matched_news()
-        maxPage = 10
-        maxTotalPage = 30
-        for start in range(1, maxTotalPage + 1, maxPage):
-            try:
-                end = min(start + (maxPage - 1), maxTotalPage)
-                send_telegram_message(
-                    f"*Scraping Dimulai dari Halaman {start} - {end}!*"
-                )
-                keywords = [
-                    "Saham terbaru",
-                    "Saham hari ini",
-                    "Pasar saham",
-                    "Indeks saham",
-                    "Berita saham terkini",
-                    "Bursa saham hari ini",
-                    "Pergerakan saham terbaru",
-                    "Saham yang naik hari ini",
-                    "Saham yang turun hari ini",
-                    "Saham blue chip",
-                    "Saham gorengan",
-                    "Saham IPO terbaru",
-                    "Analisis saham",
-                    "Rekomendasi saham",
-                    "Saham yang trending",
-                    "Saham yang paling banyak diperdagangkan",
-                    "Volume perdagangan saham",
-                    "Sentimen pasar saham",
-                    "Kinerja emiten",
-                    "Prediksi pasar saham",
-                    "Pergerakan IHSG",
-                    "Bursa Efek Indonesia",
-                    "Saham teknologi",
-                    "Saham perbankan",
-                    "Saham energi",
-                    "Saham properti",
-                    "Saham consumer goods",
-                    "Investor institusi",
-                    "Investor ritel",
-                    "Asing masuk pasar saham",
-                    "Asing keluar dari saham",
-                    "Fundamental saham",
-                    "Saham undervalued",
-                    "Saham overvalued",
-                    "Saham yang layak investasi",
-                    "Emiten dengan laba tertinggi",
-                    "Emiten dengan kerugian terbesar",
-                    "Right issue saham",
-                    "Stock split",
-                    "Dividen saham",
-                    "Buyback saham",
-                    "Berita emiten",
-                    "Aksi korporasi saham",
-                    "RUPS saham",
-                    "Perusahaan IPO tahun ini",
-                    "Krisis pasar saham",
-                    "Hedge fund dan saham",
-                    "Saham yang paling volatil",
-                    "Saham dengan kenaikan tertinggi",
-                    "Saham dengan penurunan terdalam",
-                    "Tren investasi saham",
-                ]
+        try:
+            send_telegram_message("*Scraping Dimulai!*")
+            get_saham_data()
+            collected_news = {news["url"]: news for news in load_existing_news()}
+            matched_news = load_existing_matched_news()
+            maxPage = 10
+            maxTotalPage = 30
+            for start in range(1, maxTotalPage + 1, maxPage):
+                try:
+                    end = min(start + (maxPage - 1), maxTotalPage)
+                    send_telegram_message(
+                        f"*Scraping Dimulai dari Halaman {start} - {end}!*"
+                    )
+                    keywords = [
+                        "Saham terbaru",
+                        "Saham hari ini",
+                        "Pasar saham",
+                        "Indeks saham",
+                        "Berita saham terkini",
+                        "Bursa saham hari ini",
+                        "Pergerakan saham terbaru",
+                        "Saham yang naik hari ini",
+                        "Saham yang turun hari ini",
+                        "Saham blue chip",
+                        "Saham gorengan",
+                        "Saham IPO terbaru",
+                        "Analisis saham",
+                        "Rekomendasi saham",
+                        "Saham yang trending",
+                        "Saham yang paling banyak diperdagangkan",
+                        "Volume perdagangan saham",
+                        "Sentimen pasar saham",
+                        "Kinerja emiten",
+                        "Prediksi pasar saham",
+                        "Pergerakan IHSG",
+                        "Bursa Efek Indonesia",
+                        "Saham teknologi",
+                        "Saham perbankan",
+                        "Saham energi",
+                        "Saham properti",
+                        "Saham consumer goods",
+                        "Investor institusi",
+                        "Investor ritel",
+                        "Asing masuk pasar saham",
+                        "Asing keluar dari saham",
+                        "Fundamental saham",
+                        "Saham undervalued",
+                        "Saham overvalued",
+                        "Saham yang layak investasi",
+                        "Emiten dengan laba tertinggi",
+                        "Emiten dengan kerugian terbesar",
+                        "Right issue saham",
+                        "Stock split",
+                        "Dividen saham",
+                        "Buyback saham",
+                        "Berita emiten",
+                        "Aksi korporasi saham",
+                        "RUPS saham",
+                        "Perusahaan IPO tahun ini",
+                        "Krisis pasar saham",
+                        "Hedge fund dan saham",
+                        "Saham yang paling volatil",
+                        "Saham dengan kenaikan tertinggi",
+                        "Saham dengan penurunan terdalam",
+                        "Tren investasi saham",
+                    ]
 
-                for keyword in keywords:
-                    scrape_google_news(keyword, start, end)
-                    time.sleep(random.uniform(3, 10))
-                send_telegram_message(
-                    f"✅ *Scraping Selesai! 🎉*\nTelah fetch {start} - {end} halaman berita saham terbaru!"
-                )
-                time.sleep(random.uniform(5, 10))
-            except Exception as e:
-                logger.error(f"Scraping gagal: {e}")
-                break
+                    for keyword in keywords:
+                        scrape_google_news(keyword, start, end)
+                        time.sleep(random.uniform(3, 10))
+                    send_telegram_message(
+                        f"✅ *Scraping Selesai! 🎉*\nTelah fetch {start} - {end} halaman berita saham terbaru!"
+                    )
+                    time.sleep(random.uniform(5, 10))
+                except Exception as e:
+                    logger.error(f"Scraping gagal: {e}")
+                    break
 
-        send_telegram_message(
-            f"Menunggu 5 - 10 menit sebelum scraping ulang dari halaman 1..."
-        )
-        time.sleep(random.uniform(300, 600))
+            send_telegram_message(
+                f"Menunggu 5 - 10 menit sebelum scraping ulang dari halaman 1..."
+            )
+            time.sleep(random.uniform(300, 600))
+        except Exception as e:
+            logger.error(f"Scraping error: {e}")
+            time.sleep(random.uniform(5, 10))
+            break

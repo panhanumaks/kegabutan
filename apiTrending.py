@@ -1,7 +1,7 @@
-from flask import Flask
+from flask import Flask, jsonify
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import Counter
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -21,18 +21,50 @@ def load_matched_news():
 
 
 def filter_trending_saham(days, max_saham=50):
-    now = datetime.now()
-    matched_news = load_matched_news()
-    saham_counter = Counter()
+    def count_saham(start_hours_ago, end_hours_ago):
+        now = datetime.now()
+        start_time = now - timedelta(hours=start_hours_ago)
+        end_time = now - timedelta(hours=end_hours_ago)
+        saham_counter = Counter()
+        for news in load_matched_news():
+            news_date = datetime.strptime(news["date"], "%Y-%m-%d %H:%M:%S")
+            if end_time <= news_date < start_time:
+                for saham in news["saham"]:
+                    saham_counter[saham] += 1
+        return saham_counter
 
-    for news in matched_news:
-        news_date = datetime.strptime(news["date"], "%Y-%m-%d %H:%M:%S")
-        if (now - news_date).days < days:
-            for saham in news["saham"]:
-                saham_counter[saham] += 1
+    current_counter = count_saham(0, 24 * days)
+    previous_counter = count_saham(24 * days, 48 * days)
 
-    trending_saham = [saham for saham, _ in saham_counter.most_common(max_saham)]
-    return trending_saham
+    trending_saham = [saham for saham, _ in current_counter.most_common(max_saham)]
+    saham_stats = [
+        {
+            "code": saham,
+            "count": current_counter[saham],
+            "previous_count": previous_counter.get(saham, 0),
+            "change": current_counter[saham] - previous_counter.get(saham, 0),
+            "percent_change": round(
+                (
+                    (current_counter[saham] - previous_counter.get(saham, 0))
+                    / max(previous_counter.get(saham, 1), 1)
+                )
+                * 100,
+                2,
+            ),
+            "status": (
+                "📈 Naik"
+                if current_counter[saham] > previous_counter.get(saham, 0)
+                else (
+                    "📉 Turun"
+                    if current_counter[saham] < previous_counter.get(saham, 0)
+                    else "➡️ Stabil"
+                )
+            ),
+        }
+        for saham in trending_saham
+    ]
+
+    return saham_stats, sum(current_counter.values())
 
 
 with open("kode_saham.json", "r", encoding="utf-8") as f:
@@ -43,13 +75,20 @@ saham_dict = {saham["code"]: saham["label"] for saham in saham_data}
 
 
 def send_trending_saham():
-    trending_1_day = filter_trending_saham(1)  # List of stock codes
+    saham_stats, total_data = filter_trending_saham(
+        1
+    )  # Get stock stats for last 24 hours
 
-    message = "📈 *50 Saham Trending*\n" "1️⃣ *24 Jam Terakhir:*\n"
+    message = (
+        f"📈 *50 Saham Trending*" f"1️⃣ *24 Jam Terakhir:*\n\n" 
+    )
+
     message += "\n".join(
         [
-            f"{i+1}. {code} - {saham_dict.get(code, 'Unknown')}"
-            for i, code in enumerate(trending_1_day)
+            f"{i+1}. {s['code']} - {saham_dict.get(s['code'], 'Unknown')} "
+            f"(Total Data: {s['count']}, "
+            f"Change: {s['percent_change']}% {'📈' if s['change'] > 0 else '📉' if s['change'] < 0 else '➡️'})"
+            for i, s in enumerate(saham_stats)
         ]
     )
 
@@ -62,10 +101,16 @@ def send_telegram_message(message):
     requests.post(url, json=payload)
 
 
+@app.route("/api/trending-saham/<int:days>", methods=["GET"])
+def api_trending_saham(days):
+    saham_stats, total_data = filter_trending_saham(days)
+    return jsonify({"total_data": total_data, "trending_saham": saham_stats})
+
+
 # Setup scheduler untuk kirim pesan setiap 60 menit
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
-    scheduler.add_job(send_trending_saham, "interval", minutes=60)
+    scheduler.add_job(send_trending_saham, "interval", minutes=0.2)
 scheduler.start()
 
 

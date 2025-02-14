@@ -110,7 +110,7 @@ def api_trending_saham(days):
 # Setup scheduler untuk kirim pesan setiap 60 menit
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
-    scheduler.add_job(send_trending_saham, "interval", minutes=0.2)
+    scheduler.add_job(send_trending_saham, "interval", minutes=60)
 scheduler.start()
 
 

@@ -10,6 +10,7 @@ app = Flask(__name__)
 MATCHED_JSON_PATH = "matched_news.json"
 TELEGRAM_BOT_TOKEN = "7731319192:AAHMFf44SLzMRrJZ8LoXkymPlBLCcJUOslg"
 CHAT_ID = "-1002407497809"
+NEWS_CHAT_ID = "-1002200056411"
 
 
 def load_matched_news():
@@ -37,32 +38,43 @@ def filter_trending_saham(days, max_saham=50):
     previous_counter = count_saham(24 * days, 48 * days)
 
     trending_saham = [saham for saham, _ in current_counter.most_common(max_saham)]
-    saham_stats = [
-        {
-            "code": saham,
-            "count": current_counter[saham],
-            "previous_count": previous_counter.get(saham, 0),
-            "change": current_counter[saham] - previous_counter.get(saham, 0),
-            "percent_change": round(
-                (
-                    (current_counter[saham] - previous_counter.get(saham, 0))
-                    / max(previous_counter.get(saham, 1), 1)
+    saham_stats = []
+
+    news_data = load_matched_news()
+    for saham in trending_saham:
+        berita_list = []
+        for news in news_data:
+            if saham in news["saham"]:
+                berita_list.append(
+                    {"title": news["title"], "url": news["url"], "date": news["date"]}
                 )
-                * 100,
-                2,
-            ),
-            "status": (
-                "📈 Naik"
-                if current_counter[saham] > previous_counter.get(saham, 0)
-                else (
-                    "📉 Turun"
-                    if current_counter[saham] < previous_counter.get(saham, 0)
-                    else "➡️ Stabil"
-                )
-            ),
-        }
-        for saham in trending_saham
-    ]
+
+        saham_stats.append(
+            {
+                "code": saham,
+                "count": current_counter[saham],
+                "previous_count": previous_counter.get(saham, 0),
+                "change": current_counter[saham] - previous_counter.get(saham, 0),
+                "percent_change": round(
+                    (
+                        (current_counter[saham] - previous_counter.get(saham, 0))
+                        / max(previous_counter.get(saham, 1), 1)
+                    )
+                    * 100,
+                    2,
+                ),
+                "status": (
+                    "📈 Naik"
+                    if current_counter[saham] > previous_counter.get(saham, 0)
+                    else (
+                        "📉 Turun"
+                        if current_counter[saham] < previous_counter.get(saham, 0)
+                        else "➡️ Stabil"
+                    )
+                ),
+                "berita": berita_list,
+            }
+        )
 
     return saham_stats, sum(current_counter.values())
 
@@ -70,18 +82,13 @@ def filter_trending_saham(days, max_saham=50):
 with open("kode_saham.json", "r", encoding="utf-8") as f:
     saham_data = json.load(f)
 
-# Create a dictionary for quick lookup
 saham_dict = {saham["code"]: saham["label"] for saham in saham_data}
 
 
 def send_trending_saham():
-    saham_stats, total_data = filter_trending_saham(
-        1
-    )  # Get stock stats for last 24 hours
+    saham_stats, _ = filter_trending_saham(1)
 
-    message = (
-        f"📈 *50 Saham Trending*" f"1️⃣ *24 Jam Terakhir:*\n\n" 
-    )
+    message = f"📈 *50 Saham Trending*\n1️⃣ *24 Jam Terakhir:*\n\n"
 
     message += "\n".join(
         [
@@ -95,9 +102,41 @@ def send_trending_saham():
     send_telegram_message(message)
 
 
+def send_news_saham():
+    saham_stats, _ = filter_trending_saham(1)
+    saham_news = {}
+
+    for saham_info in saham_stats:
+        code = saham_info["code"]
+        berita_list = saham_info.get("berita", [])
+
+        if code not in saham_news:
+            saham_news[code] = []
+
+        for berita in berita_list:
+            title = berita["title"]
+            url = berita["url"]
+            date = berita["date"]
+            saham_news[code].append(f"    📅 {date}\n    🔗 [{title}]({url})")
+
+    message = "📰 *Berita Saham Terbaru:*"
+    for saham, news_list in saham_news.items():
+        message += f"📌 *{saham}*"
+        message += "\n".join(news_list) + "\n\n"
+
+    print(message)
+    send_news_telegram_message(message)
+
+
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+    requests.post(url, json=payload)
+
+
+def send_news_telegram_message(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": NEWS_CHAT_ID, "text": message, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
 
 
@@ -107,12 +146,11 @@ def api_trending_saham(days):
     return jsonify({"total_data": total_data, "trending_saham": saham_stats})
 
 
-# Setup scheduler untuk kirim pesan setiap 60 menit
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
     scheduler.add_job(send_trending_saham, "interval", minutes=60)
+    scheduler.add_job(send_news_saham, "interval", minutes=60)
 scheduler.start()
-
 
 if __name__ == "__main__":
     try:

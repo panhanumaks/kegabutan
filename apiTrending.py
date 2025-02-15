@@ -106,7 +106,7 @@ def send_trending_saham():
             for i, s in enumerate(saham_stats)
         ]
     )
-    # send_telegram_message(message)
+    send_telegram_message(message)
 
 
 import time

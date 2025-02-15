@@ -144,9 +144,7 @@ def send_news_saham():
             for i in range(0, len(berita_list), 5):
                 batch = berita_list[i : i + 5]
                 message = (
-                    f"📰 *Berita Saham:*\n📌 *{code}*\n"
-                    + "\n".join(batch)
-                    + "\n\n"
+                    f"📰 *Berita Saham:*\n📌 *{code}*\n" + "\n".join(batch) + "\n\n"
                 )
                 print(message + "\n\n\n")
                 send_news_telegram_message(message)
@@ -188,14 +186,19 @@ def api_trending_saham(days):
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
     scheduler.add_job(send_trending_saham, "interval", minutes=60)
-    time.sleep(30)
-    scheduler.add_job(send_news_saham, "interval", minutes=360)
 scheduler.start()
+
+time.sleep(30)
+
+scheduler_news = BackgroundScheduler()
+if not scheduler_news.get_jobs():
+    scheduler_news.add_job(send_news_saham, "interval", minutes=360)
+scheduler_news.start()
 
 if __name__ == "__main__":
     try:
-        send_trending_saham()
-        send_news_saham()
+        # send_trending_saham()
+        # send_news_saham()
         app.run(host="0.0.0.0", port=9000, debug=False, use_reloader=False)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()

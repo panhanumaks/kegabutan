@@ -111,7 +111,7 @@ def send_trending_saham():
         [
             f"{i+1}. {s['code']} - {saham_dict.get(s['code'], 'Unknown')} "
             f"(Total Data: {s['count']}, "
-            f"Change: {s['percent_change']}% {'📈' if s['change'] > 0 else '📉' if s['change'] < 0 else '➡️'})"
+            f"Change: {s['percent_change']}% {'📈' if s['change'] > 0 else '📉' if s['change'] < 0 else '➡️'})\n"
             for i, s in enumerate(saham_stats)
         ]
     )
@@ -144,13 +144,13 @@ def send_news_saham():
             for i in range(0, len(berita_list), 5):
                 batch = berita_list[i : i + 5]
                 message = (
-                    f"📰 *Berita Saham Terbaru:*\n📌 *{code}*\n"
+                    f"📰 *Berita Saham:*\n📌 *{code}*\n"
                     + "\n".join(batch)
                     + "\n\n"
                 )
                 print(message + "\n\n\n")
                 send_news_telegram_message(message)
-                time.sleep(5)
+                time.sleep(20)
 
 
 def send_telegram_message(message):
@@ -188,6 +188,7 @@ def api_trending_saham(days):
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
     scheduler.add_job(send_trending_saham, "interval", minutes=60)
+    time.sleep(30)
     scheduler.add_job(send_news_saham, "interval", minutes=360)
 scheduler.start()
 

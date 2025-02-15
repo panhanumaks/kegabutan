@@ -120,7 +120,7 @@ def send_trending_saham():
 
 def send_news_saham():
     # Mendapatkan saham yang sedang trending, diurutkan sesuai hasil filtering
-    saham_stats, _ = filter_trending_saham(1, 10)
+    saham_stats, _ = filter_trending_saham(1, 20)
     saham_news = {}
 
     for saham_info in saham_stats:
@@ -188,7 +188,7 @@ def api_trending_saham(days):
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
     scheduler.add_job(send_trending_saham, "interval", minutes=60)
-    scheduler.add_job(send_news_saham, "interval", minutes=720)
+    scheduler.add_job(send_news_saham, "interval", minutes=360)
 scheduler.start()
 
 if __name__ == "__main__":

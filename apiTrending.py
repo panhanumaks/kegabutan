@@ -111,7 +111,7 @@ def send_trending_saham():
         [
             f"{i+1}. {s['code']} - {saham_dict.get(s['code'], 'Unknown')} "
             f"(Total Data: {s['count']}, "
-            f"Change: {s['percent_change']}% {'📈' if s['change'] > 0 else '📉' if s['change'] < 0 else '➡️'})\n"
+            f"Change: {s['percent_change']}% {'📈' if s['change'] > 0 else '📉' if s['change'] < 0 else '➡️'})"
             for i, s in enumerate(saham_stats)
         ]
     )

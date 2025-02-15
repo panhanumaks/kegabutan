@@ -44,18 +44,27 @@ def filter_trending_saham(days, max_saham=50):
 
     current_counter = count_saham(0, 24 * days)
     previous_counter = count_saham(24 * days, 48 * days)
+    hours = days * 24
 
     trending_saham = [saham for saham, _ in current_counter.most_common(max_saham)]
     saham_stats = []
 
+    now = datetime.now()
+
     news_data = load_matched_news()
     for saham in trending_saham:
         berita_list = []
+        seen_titles = set()
+
         for news in news_data:
-            if saham in news["saham"]:
-                berita_list.append(
-                    {"title": news["title"], "url": news["url"], "date": news["date"]}
-                )
+            news_date = datetime.strptime(news["date"], "%Y-%m-%d %H:%M:%S")
+            if saham in news["saham"] and now - news_date <= timedelta(hours=hours):
+                title = news["title"]
+                if title not in seen_titles:
+                    seen_titles.add(title)
+                    berita_list.append(
+                        {"title": title, "url": news["url"], "date": news["date"]}
+                    )
 
         saham_stats.append(
             {

@@ -1,11 +1,19 @@
+import time
 from flask import Flask, jsonify
 import json
 import requests
 from datetime import datetime, timedelta
 from collections import Counter
 from apscheduler.schedulers.background import BackgroundScheduler
+import logging
 
 app = Flask(__name__)
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger()
 
 MATCHED_JSON_PATH = "matched_news.json"
 TELEGRAM_BOT_TOKEN = "7731319192:AAHMFf44SLzMRrJZ8LoXkymPlBLCcJUOslg"
@@ -98,12 +106,15 @@ def send_trending_saham():
             for i, s in enumerate(saham_stats)
         ]
     )
+    # send_telegram_message(message)
 
-    send_telegram_message(message)
+
+import time
 
 
 def send_news_saham():
-    saham_stats, _ = filter_trending_saham(1)
+    # Mendapatkan saham yang sedang trending, diurutkan sesuai hasil filtering
+    saham_stats, _ = filter_trending_saham(1, 10)
     saham_news = {}
 
     for saham_info in saham_stats:
@@ -119,25 +130,47 @@ def send_news_saham():
             date = berita["date"]
             saham_news[code].append(f"    📅 {date}\n    🔗 [{title}]({url})")
 
-    message = "📰 *Berita Saham Terbaru:*"
-    for saham, news_list in saham_news.items():
-        message += f"📌 *{saham}*"
-        message += "\n".join(news_list) + "\n\n"
-
-    print(message)
-    send_news_telegram_message(message)
+    # Mengirim berita maksimal 5 per chat berdasarkan urutan dari hasil filtering
+    for saham_info in saham_stats:
+        code = saham_info["code"]
+        if code in saham_news:
+            berita_list = saham_news[code]
+            for i in range(0, len(berita_list), 5):
+                batch = berita_list[i : i + 5]
+                message = (
+                    f"📰 *Berita Saham Terbaru:*\n📌 *{code}*\n"
+                    + "\n".join(batch)
+                    + "\n\n"
+                )
+                print(message + "\n\n\n")
+                send_news_telegram_message(message)
+                time.sleep(5)
 
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
-    requests.post(url, json=payload)
+    try:
+        response = requests.post(url, json=payload)
+        logger.info(
+            f"Sent message to CHAT_ID: {CHAT_ID} - Status Code: {response.status_code}"
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to send message: {e}")
 
 
 def send_news_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": NEWS_CHAT_ID, "text": message, "parse_mode": "Markdown"}
-    requests.post(url, json=payload)
+    try:
+        response = requests.post(url, json=payload)
+        logger.info(
+            f"Sent message to NEWS_CHAT_ID: {NEWS_CHAT_ID} - Status Code: {response.status_code}"
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to send news message: {e}")
 
 
 @app.route("/api/trending-saham/<int:days>", methods=["GET"])
@@ -154,6 +187,8 @@ scheduler.start()
 
 if __name__ == "__main__":
     try:
+        send_trending_saham()
+        send_news_saham()
         app.run(host="0.0.0.0", port=9000, debug=False, use_reloader=False)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()

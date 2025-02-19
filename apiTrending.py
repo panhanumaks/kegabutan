@@ -197,7 +197,7 @@ if not scheduler.get_jobs():
     scheduler.add_job(send_trending_saham, "interval", minutes=60)
 scheduler.start()
 
-time.sleep(30)
+time.sleep(10)
 
 scheduler_news = BackgroundScheduler()
 if not scheduler_news.get_jobs():
@@ -207,7 +207,7 @@ scheduler_news.start()
 if __name__ == "__main__":
     try:
         send_trending_saham()
-        time.sleep(30)
+        time.sleep(10)
         send_news_saham()
         app.run(host="0.0.0.0", port=9000, debug=False, use_reloader=False)
     except (KeyboardInterrupt, SystemExit):

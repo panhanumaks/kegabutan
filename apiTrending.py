@@ -17,8 +17,8 @@ logger = logging.getLogger()
 
 MATCHED_JSON_PATH = "matched_news.json"
 TELEGRAM_BOT_TOKEN = "7731319192:AAHMFf44SLzMRrJZ8LoXkymPlBLCcJUOslg"
-CHAT_ID = "-1002407497809"
-NEWS_CHAT_ID = "-1002200056411"
+CHAT_ID = "-1002407497809"  ## Ini channel idx trending
+NEWS_CHAT_ID = "-1002200056411"  ## Ini channel idx news
 
 
 def load_matched_news():
@@ -103,7 +103,9 @@ saham_dict = {saham["code"]: saham["label"] for saham in saham_data}
 
 
 def send_trending_saham():
-    saham_stats, _ = filter_trending_saham(1)
+    saham_stats, _ = filter_trending_saham(
+        1
+    )  ## 1 Tamdanya 1 hari atau 24 jam terakhir bisa diubah kapan aja maks 3 hari
 
     message = f"📈 *50 Saham Trending*\n1️⃣ *24 Jam Terakhir:*\n\n"
 
@@ -119,8 +121,9 @@ def send_trending_saham():
 
 
 def send_news_saham():
-    # Mendapatkan saham yang sedang trending, diurutkan sesuai hasil filtering
-    saham_stats, _ = filter_trending_saham(1, 50)
+    saham_stats, _ = filter_trending_saham(
+        1, 50
+    )  ## 1 Tamdanya 1 hari atau 24 jam terakhir bisa diubah kapan aja maks 3 hari, dan 50 itu tandanya berapa banyak emiten yang mau diambil
     saham_news = {}
 
     for saham_info in saham_stats:
@@ -136,8 +139,6 @@ def send_news_saham():
             date = berita["date"]
             saham_news[code].append(f"    📅 {date}\n    🔗 [{title}]({url})")
 
-    total_sent = 0
-
     for saham_info in saham_stats:
         code = saham_info["code"]
         if code in saham_news:
@@ -150,14 +151,9 @@ def send_news_saham():
                 print(message + "\n\n\n")
                 send_news_telegram_message(message)
 
-                total_sent += len(batch)
-                if total_sent >= 50:
-                    break
-
                 time.sleep(5)
+                break
 
-        if total_sent >= 50:
-            break
 
 
 def send_telegram_message(message):
@@ -186,23 +182,30 @@ def send_news_telegram_message(message):
         logger.error(f"Failed to send news message: {e}")
 
 
-@app.route("/api/trending-saham/<int:days>", methods=["GET"])
-def api_trending_saham(days):
-    saham_stats, total_data = filter_trending_saham(days)
-    return jsonify({"total_data": total_data, "trending_saham": saham_stats})
-
-
 scheduler = BackgroundScheduler()
 if not scheduler.get_jobs():
-    scheduler.add_job(send_trending_saham, "interval", minutes=60)
+    scheduler.add_job(
+        send_trending_saham, "interval", minutes=60
+    )  ## Ini atur aja (existing 60 menit schedulernya untuk kirim trending saham)
 scheduler.start()
 
 time.sleep(10)
 
 scheduler_news = BackgroundScheduler()
 if not scheduler_news.get_jobs():
-    scheduler_news.add_job(send_news_saham, "interval", minutes=60)
+    scheduler_news.add_job(
+        send_news_saham, "interval", minutes=60
+    )  ## Ini atur aja (existing 60 menit schedulernya untuk kirim berita saham)
 scheduler_news.start()
+
+
+@app.route(
+    "/api/trending-saham/<int:days>", methods=["GET"]
+)  ## API ini untuk tes hasil filtering nya
+def api_trending_saham(days):
+    saham_stats, total_data = filter_trending_saham(days)
+    return jsonify({"total_data": total_data, "trending_saham": saham_stats})
+
 
 if __name__ == "__main__":
     try:

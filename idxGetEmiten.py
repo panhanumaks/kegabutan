@@ -13,7 +13,7 @@ import random
 import requests
 
 BOT_TOKEN = "7731319192:AAHMFf44SLzMRrJZ8LoXkymPlBLCcJUOslg"
-CHAT_ID = "-1002277216398"
+CHAT_ID = "-1002277216398"  ## Ini channel IDX Report
 
 
 def send_telegram_message(message):

@@ -120,7 +120,7 @@ def send_trending_saham():
 
 def send_news_saham():
     # Mendapatkan saham yang sedang trending, diurutkan sesuai hasil filtering
-    saham_stats, _ = filter_trending_saham(1, 20)
+    saham_stats, _ = filter_trending_saham(1, 50)
     saham_news = {}
 
     for saham_info in saham_stats:
@@ -192,13 +192,14 @@ time.sleep(30)
 
 scheduler_news = BackgroundScheduler()
 if not scheduler_news.get_jobs():
-    scheduler_news.add_job(send_news_saham, "interval", minutes=360)
+    scheduler_news.add_job(send_news_saham, "interval", minutes=60)
 scheduler_news.start()
 
 if __name__ == "__main__":
     try:
-        # send_trending_saham()
-        # send_news_saham()
+        send_trending_saham()
+        time.sleep(30)
+        send_news_saham()
         app.run(host="0.0.0.0", port=9000, debug=False, use_reloader=False)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()

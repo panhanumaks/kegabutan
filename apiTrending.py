@@ -136,7 +136,8 @@ def send_news_saham():
             date = berita["date"]
             saham_news[code].append(f"    📅 {date}\n    🔗 [{title}]({url})")
 
-    # Mengirim berita maksimal 5 per chat berdasarkan urutan dari hasil filtering
+    total_sent = 0
+
     for saham_info in saham_stats:
         code = saham_info["code"]
         if code in saham_news:
@@ -148,7 +149,15 @@ def send_news_saham():
                 )
                 print(message + "\n\n\n")
                 send_news_telegram_message(message)
-                time.sleep(20)
+
+                total_sent += len(batch)
+                if total_sent >= 50:
+                    break
+
+                time.sleep(5)
+
+        if total_sent >= 50:
+            break
 
 
 def send_telegram_message(message):

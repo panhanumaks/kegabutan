@@ -117,7 +117,7 @@ def send_trending_saham():
             for i, s in enumerate(saham_stats)
         ]
     )
-    send_telegram_message(message)
+    send_telegram_message_with_retry(message)
 
 
 def send_news_saham():
@@ -149,11 +149,41 @@ def send_news_saham():
                     f"📰 *Berita Saham:*\n📌 *{code}*\n" + "\n".join(batch) + "\n\n"
                 )
                 print(message + "\n\n\n")
-                send_news_telegram_message(message)
-
+                send_news_telegram_message_with_retry(
+                    message
+                )  # Pakai fungsi dengan retry
                 time.sleep(5)
                 break
 
+
+def send_telegram_message_with_retry(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+
+    while True:
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            logger.info(f"Message sent successfully to {CHAT_ID}")
+            return
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send message: {e}. Retrying in 10 seconds...")
+            time.sleep(10)
+
+
+def send_news_telegram_message_with_retry(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": NEWS_CHAT_ID, "text": message, "parse_mode": "Markdown"}
+
+    while True:
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            logger.info(f"News message sent successfully to {NEWS_CHAT_ID}")
+            return
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send news message: {e}. Retrying in 10 seconds...")
+            time.sleep(10)
 
 
 def send_telegram_message(message):
